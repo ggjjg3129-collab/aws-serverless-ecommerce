@@ -10,14 +10,14 @@ The project focuses on real-world serverless architecture and demonstrates how f
 
 This project was built to gain hands-on experience with the following AWS and application-development concepts:
 
-- Serverless architecture
-- AWS Lambda
-- API development with Amazon API Gateway
-- Database integration with Amazon RDS for MySQL
-- Secure credential management with AWS Secrets Manager
-- VPC networking and private service communication
-- Security Group configuration
-- Connecting a frontend web application to cloud services
+* Serverless architecture
+* AWS Lambda
+* API development with Amazon API Gateway
+* Database integration with Amazon RDS for MySQL
+* Secure credential management with AWS Secrets Manager
+* VPC networking and private service communication
+* Security Group configuration
+* Connecting a frontend web application to cloud services
 
 The emphasis is on understanding how different AWS services work together to support a real application architecture in a secure, scalable, and operationally efficient manner.
 
@@ -62,7 +62,7 @@ AWS Secrets Manager securely stores the database credentials used by the applica
 
 ### Amazon VPC
 
-Amazon VPC enables private networking for the backend services. By placing Lambda and RDS inside the VPC, the application can communicate privately without exposing the database directly to the public internet. This is a standard pattern for secure application design in AWS.
+Amazon VPC enables private networking for the backend resources. Amazon RDS is deployed within the VPC, while Lambda is configured to access resources within the VPC. This allows the application to communicate with the database through controlled private networking without exposing the database directly to the public internet.
 
 ### Security Groups
 
@@ -100,11 +100,11 @@ The product listing flow shows how Lambda can fetch data from MySQL and return i
 
 The shopping cart is handled entirely in the browser using localStorage. This keeps the cart state available during the user session without requiring a backend order workflow. The cart supports the following client-side behaviors:
 
-- Add products
-- Increase product quantity
-- Decrease product quantity
-- Remove products
-- Calculate the total cost
+* Add products
+* Increase product quantity
+* Decrease product quantity
+* Remove products
+* Calculate the total cost
 
 This project does not implement checkout, order processing, or payment handling, and those capabilities remain out of scope for the current application.
 
@@ -112,13 +112,13 @@ This project does not implement checkout, order processing, or payment handling,
 
 The application follows several important AWS security and networking practices:
 
-- RDS is not publicly accessible.
-- Lambda communicates with RDS through the VPC.
-- Security Groups restrict MySQL access to the required resources.
-- Database credentials are stored in AWS Secrets Manager.
-- Credentials are not exposed in frontend code.
-- Passwords are hashed before being stored in the database.
-- Secrets Manager is accessed privately through a VPC Endpoint.
+* RDS is not publicly accessible.
+* Lambda communicates with RDS through the VPC.
+* Security Groups restrict MySQL access to the required resources.
+* Database credentials are stored in AWS Secrets Manager.
+* Credentials are not exposed in frontend code.
+* Passwords are hashed before being stored in the database.
+* Secrets Manager is accessed privately through a VPC Endpoint.
 
 These controls demonstrate how cloud-native applications can maintain a secure architecture while still providing the functionality needed by a web frontend.
 
@@ -126,20 +126,20 @@ These controls demonstrate how cloud-native applications can maintain a secure a
 
 The frontend is implemented with standard web technologies and provides the user-facing interface for the application:
 
-- HTML5
-- CSS3
-- JavaScript
+* HTML5
+* CSS3
+* JavaScript
 
 The interface includes:
 
-- Registration
-- Login
-- Logout
-- Welcome message
-- Dynamic product loading
-- Shopping cart with quantity controls
-- Dark and light mode toggle
-- Responsive design
+* Registration
+* Login
+* Logout
+* Welcome message
+* Dynamic product loading
+* Shopping cart with quantity controls
+* Dark and light mode toggle
+* Responsive design
 
 The frontend is intentionally kept lightweight and focused on user interaction while the backend responsibilities are handled by AWS services.
 
@@ -164,43 +164,43 @@ This repository contains the frontend application structure used to connect to t
 
 ## 10. Technologies
 
-- HTML5
-- CSS3
-- JavaScript
-- Python
-- AWS Lambda
-- Amazon API Gateway
-- Amazon RDS for MySQL
-- AWS Secrets Manager
-- Amazon VPC
-- Security Groups
-- PyMySQL
+* HTML5
+* CSS3
+* JavaScript
+* Python
+* AWS Lambda
+* Amazon API Gateway
+* Amazon RDS for MySQL
+* AWS Secrets Manager
+* Amazon VPC
+* Security Groups
+* PyMySQL
 
 ## 11. What I Learned
 
 This project demonstrates practical experience with the following AWS and application integration concepts:
 
-- Building a serverless backend with AWS Lambda
-- Connecting API Gateway to Lambda-based application logic
-- Integrating Lambda with Amazon RDS MySQL
-- Using AWS Secrets Manager for secure credential management
-- Working with VPC networking and private communication patterns
-- Configuring Security Groups for resource isolation
-- Building APIs that support frontend-driven applications
-- Integrating multiple AWS services into a cohesive application architecture
-- Understanding how serverless components communicate in a real application environment
+* Building a serverless backend with AWS Lambda
+* Connecting API Gateway to Lambda-based application logic
+* Integrating Lambda with Amazon RDS MySQL
+* Using AWS Secrets Manager for secure credential management
+* Working with VPC networking and private communication patterns
+* Configuring Security Groups for resource isolation
+* Building APIs that support frontend-driven applications
+* Integrating multiple AWS services into a cohesive application architecture
+* Understanding how serverless components communicate in a real application environment
 
 ## 12. Future Improvements
 
 The following items are planned as future improvements and are not implemented in the current version of this project:
 
-- Backend order management
-- Checkout API
-- Amazon Cognito authentication
-- Payment integration
-- S3 and CloudFront deployment
-- Infrastructure as Code
-- Improved monitoring and logging
+* Backend order management
+* Checkout API
+* Amazon Cognito authentication
+* Payment integration
+* S3 and CloudFront deployment
+* Infrastructure as Code
+* Improved monitoring and logging
 
 ## 13. Conclusion
 
