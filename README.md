@@ -2,28 +2,19 @@
 
 ## 1. Overview
 
-This project is a serverless e-commerce web application designed to demonstrate practical AWS integration patterns used in modern cloud-based applications. The frontend is a lightweight web experience built with HTML5, CSS3, and JavaScript, while the backend is implemented using AWS Lambda functions exposed through Amazon API Gateway.
+This project is a serverless e-commerce web application built to demonstrate practical AWS cloud architecture and service integration.
 
-The project focuses on real-world serverless architecture and demonstrates how frontend applications can securely connect to backend services that use managed AWS infrastructure. In particular, it showcases the role of AWS Lambda as the primary backend compute service for processing application logic without managing servers.
+The frontend is developed using HTML5, CSS3, and JavaScript, while the backend uses AWS Lambda functions exposed through Amazon API Gateway. The application integrates Amazon RDS for MySQL for persistent data storage and AWS Secrets Manager for secure database credential management.
 
-## 2. Project Objectives
+The project demonstrates how multiple AWS services can work together to provide a secure and scalable backend without managing traditional application servers.
 
-This project was built to gain hands-on experience with the following AWS and application-development concepts:
+---
 
-* Serverless architecture
-* AWS Lambda
-* API development with Amazon API Gateway
-* Database integration with Amazon RDS for MySQL
-* Secure credential management with AWS Secrets Manager
-* VPC networking and private service communication
-* Security Group configuration
-* Connecting a frontend web application to cloud services
+## 2. Architecture
 
-The emphasis is on understanding how different AWS services work together to support a real application architecture in a secure, scalable, and operationally efficient manner.
+![AWS Serverless E-Commerce Architecture](screenshots/architecture-diagram.png)
 
-## 3. Architecture
-
-The application follows a simple serverless architecture:
+The application follows a serverless backend architecture:
 
 ```text
 Frontend
@@ -34,116 +25,599 @@ Amazon API Gateway
     v
 AWS Lambda
     |
-    +----> AWS Secrets Manager
+    +----------> AWS Secrets Manager
     |
     v
 Amazon RDS for MySQL
 ```
 
-The frontend communicates with the backend through API Gateway. AWS Lambda handles the business logic and interacts with Amazon RDS MySQL for data operations. Database credentials are retrieved securely from AWS Secrets Manager. Amazon RDS is deployed within the VPC, while Lambda is configured to access resources in the VPC. Security Groups control the permitted network traffic between them. This architecture demonstrates how Lambda can serve as the application backend while keeping database access private and controlled.
+The backend resources are connected through Amazon VPC networking. Amazon RDS is not publicly accessible, while Lambda is configured to access resources within the VPC.
 
-## 4. AWS Services Used
+A VPC Endpoint for Secrets Manager allows Lambda to retrieve database credentials through private networking.
+
+Security Groups control the required communication between Lambda and RDS.
+
+---
+
+## 3. AWS Services Used
 
 ### AWS Lambda
 
-AWS Lambda is the core backend compute service in this project. It executes the application logic without requiring server provisioning or infrastructure maintenance. Lambda functions are used to handle user registration, login, and product retrieval. This demonstrates the practical value of serverless backend compute for web applications, where code runs in response to API requests and scales automatically based on demand.
+AWS Lambda is the primary backend compute service used in this project.
+
+Three Lambda functions handle the main backend operations:
+
+* `Ecommerce-Register`
+* `Ecommerce-Login`
+* `Ecommerce-Get-Products`
+
+Lambda executes the application logic in response to API requests without requiring server provisioning or server management.
+
+**Practical role:** Execute backend application logic and communicate with the database.
+
+---
 
 ### Amazon API Gateway
 
-Amazon API Gateway exposes the backend functionality through HTTP endpoints that the frontend calls. It provides a standardized way for the frontend to invoke backend logic while managing API routing, request handling, and secure communication between the client and Lambda.
+Amazon API Gateway exposes the Lambda functions through HTTP API endpoints used by the frontend.
+
+The API includes:
+
+```text
+POST /register
+POST /login
+GET /products
+```
+
+**Practical role:** Receive frontend requests and route them to the appropriate Lambda function.
+
+---
 
 ### Amazon RDS for MySQL
 
-Amazon RDS for MySQL provides a managed relational database service for storing application data. In this project, the backend uses it to store and retrieve user-related and product-related data. Using a managed database reduces operational overhead while providing reliability and compatibility for structured application data.
+Amazon RDS for MySQL provides the relational database used by the application.
+
+Database:
+
+```text
+ecommerce_db
+```
+
+Tables:
+
+```text
+users
+products
+```
+
+The `users` table stores registered user information, while the `products` table stores the products displayed in the store.
+
+The database is configured with:
+
+```text
+Public Access: No
+```
+
+This keeps the database private inside the AWS networking environment.
+
+**Practical role:** Store and retrieve persistent application data.
+
+---
 
 ### AWS Secrets Manager
 
-AWS Secrets Manager securely stores the database credentials used by the application. Lambda retrieves these credentials at runtime instead of embedding them in the frontend or application code. This is a key security practice that reduces the risk of exposing sensitive configuration values.
+AWS Secrets Manager stores the database credentials required by the Lambda functions.
+
+Lambda retrieves the credentials at runtime instead of storing them directly in the frontend or source code.
+
+**Practical role:** Securely manage sensitive database credentials.
+
+---
 
 ### Amazon VPC
 
-Amazon VPC enables private networking for the backend resources. Amazon RDS is deployed within the VPC, while Lambda is configured to access resources within the VPC. This allows the application to communicate with the database through controlled private networking without exposing the database directly to the public internet.
+Amazon VPC provides private networking for the backend resources.
+
+Amazon RDS is deployed within the VPC, while Lambda is configured to access resources within the VPC. This allows the application to communicate with the database through controlled private networking without exposing the database directly to the public internet.
+
+**Practical role:** Provide isolated and controlled networking for backend resources.
+
+---
 
 ### Security Groups
 
-Security Groups are used to control inbound and outbound traffic for the resources in the VPC. They are configured to allow only the required communication paths, such as allowing Lambda access to RDS over the MySQL port while restricting unnecessary access. This improves network isolation and reduces attack surface.
+Security Groups control network traffic between the backend resources.
+
+The RDS Security Group allows MySQL traffic on port `3306` from the Lambda Security Group.
+
+```text
+Lambda Security Group
+        |
+        | TCP 3306
+        v
+RDS Security Group
+```
+
+**Practical role:** Restrict database access to the required backend resource.
+
+---
 
 ### VPC Endpoint for Secrets Manager
 
-A VPC Endpoint for Secrets Manager allows Lambda to access secrets privately without traversing the public internet. This enables secure credential retrieval inside the VPC and demonstrates a common AWS networking pattern for private service access.
+A VPC Endpoint for Secrets Manager allows Lambda to communicate with Secrets Manager privately from inside the VPC.
+
+**Practical role:** Provide private access to Secrets Manager without requiring public internet access.
+
+---
 
 ### PyMySQL Lambda Layer
 
-The PyMySQL Lambda layer provides the database driver required for Lambda functions to connect to Amazon RDS MySQL. This allows the Lambda functions to interact with the relational database in a clean and maintainable way, while keeping the application logic focused on API behavior and business rules.
+The PyMySQL Lambda layer provides the Python database driver required for Lambda to connect to Amazon RDS for MySQL.
 
-## 5. Application Flow
+**Practical role:** Enable Python Lambda functions to communicate with the MySQL database.
 
-### Registration
+---
 
-Frontend → API Gateway → Register Lambda → Secrets Manager → RDS MySQL
+## 4. Application Flow
 
-When a new user registers, the frontend sends account details to the API Gateway endpoint. Lambda retrieves the database credentials from Secrets Manager and stores the user information in Amazon RDS MySQL. Passwords are hashed before insertion to protect stored credentials.
+### User Registration
 
-### Login
+```text
+Frontend
+   ↓
+API Gateway
+   ↓
+Ecommerce-Register Lambda
+   ↓
+Secrets Manager
+   ↓
+Amazon RDS MySQL
+```
 
-Frontend → API Gateway → Login Lambda → Secrets Manager → RDS MySQL
+When a user registers, the frontend sends the account information to API Gateway.
 
-During login, the frontend submits credentials to the API Gateway. The login Lambda function retrieves the database credentials securely, queries the database for the user record, verifies the password, and returns the login result to the frontend.
+The Register Lambda retrieves the database credentials from Secrets Manager, hashes the password, and stores the user information in the `users` table in Amazon RDS.
 
-### Products
+---
 
-Frontend → API Gateway → Get Products Lambda → Secrets Manager → RDS MySQL → Lambda → API Gateway → Frontend
+### User Login
 
-The product listing flow shows how Lambda can fetch data from MySQL and return it to the frontend through the API layer. This is a strong example of how serverless backend functions can power dynamic web content while keeping database access private and secure.
+```text
+Frontend
+   ↓
+API Gateway
+   ↓
+Ecommerce-Login Lambda
+   ↓
+Secrets Manager
+   ↓
+Amazon RDS MySQL
+```
 
-## 6. Shopping Cart
+The Login Lambda retrieves the database credentials, searches for the user by email, verifies the stored password hash, and returns the login result to the frontend.
 
-The shopping cart is handled entirely in the browser using localStorage. This keeps the cart state available during the user session without requiring a backend order workflow. The cart supports the following client-side behaviors:
+---
 
-* Add products
-* Increase product quantity
-* Decrease product quantity
-* Remove products
-* Calculate the total cost
+### Product Retrieval
 
-This project does not implement checkout, order processing, or payment handling, and those capabilities remain out of scope for the current application.
+```text
+Frontend
+   ↓
+API Gateway
+   ↓
+Ecommerce-Get-Products Lambda
+   ↓
+Secrets Manager
+   ↓
+Amazon RDS MySQL
+   ↓
+Lambda
+   ↓
+API Gateway
+   ↓
+Frontend
+```
 
-## 7. Security and Networking
+The Get Products Lambda queries the `products` table and returns the product information to the frontend.
 
-The application follows several important AWS security and networking practices:
+The retrieved products are then displayed dynamically in the store.
 
-* RDS is not publicly accessible.
-* Lambda communicates with RDS through the VPC.
+---
+
+## 5. Database
+
+The application uses Amazon RDS for MySQL with the following database:
+
+```text
+Database: ecommerce_db
+```
+
+### Users Table
+
+The `users` table stores registered users.
+
+Main fields include:
+
+```text
+id
+name
+email
+password_hash
+```
+
+Passwords are hashed before being stored in the database.
+
+### Products Table
+
+The `products` table stores the products displayed by the application.
+
+Main fields include:
+
+```text
+id
+name
+description
+price
+stock
+created_at
+```
+
+The project includes the following sample products:
+
+```text
+Premium T-Shirt
+Classic Hoodie
+Sport Cap
+Sports Bag
+```
+
+---
+
+## 6. Lambda Functions
+
+### 6.1 Ecommerce-Register
+
+The Register Lambda handles user registration.
+
+Responsibilities:
+
+* Retrieve database credentials from Secrets Manager
+* Receive registration data
+* Hash the user's password
+* Insert the user into the RDS database
+* Return the registration result
+
+```python
+import json
+import boto3
+import pymysql
+import hashlib
+import os
+
+SECRET_NAME = "rds!db-e3663d17-6fe4-4488-9454-a42c3f79f307"
+REGION = "us-east-1"
+
+RDS_HOST = "ecommerce-db.cg7gmm0quohu.us-east-1.rds.amazonaws.com"
+RDS_PORT = 3306
+
+def hash_password(password):
+    salt = os.urandom(16)
+    password_hash = hashlib.scrypt(
+        password.encode(),
+        salt=salt,
+        n=16384,
+        r=8,
+        p=1
+    )
+    return salt.hex() + ":" + password_hash.hex()
+
+def lambda_handler(event, context):
+    secrets_client = boto3.client(
+        "secretsmanager",
+        region_name=REGION
+    )
+
+    response = secrets_client.get_secret_value(
+        SecretId=SECRET_NAME
+    )
+
+    secret = json.loads(response["SecretString"])
+
+    body = json.loads(event["body"])
+
+    name = body["name"]
+    email = body["email"]
+    password = body["password"]
+
+    password_hash = hash_password(password)
+
+    connection = pymysql.connect(
+        host=RDS_HOST,
+        user=secret["username"],
+        password=secret["password"],
+        port=RDS_PORT,
+        database="ecommerce_db",
+        connect_timeout=5
+    )
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            INSERT INTO users (name, email, password_hash)
+            VALUES (%s, %s, %s)
+            """,
+            (name, email, password_hash)
+        )
+
+    connection.commit()
+    connection.close()
+
+    return {
+        "statusCode": 201,
+        "body": json.dumps({
+            "message": "User registered successfully"
+        })
+    }
+```
+
+---
+
+### 6.2 Ecommerce-Login
+
+The Login Lambda authenticates users against the data stored in RDS.
+
+Responsibilities:
+
+* Retrieve database credentials
+* Find the user by email
+* Retrieve the stored password hash
+* Verify the submitted password
+* Return the authenticated user information
+
+```python
+import json
+import boto3
+import pymysql
+import hashlib
+import hmac
+
+SECRET_NAME = "rds!db-e3663d17-6fe4-4488-9454-a42c3f79f307"
+REGION = "us-east-1"
+
+RDS_HOST = "ecommerce-db.cg7gmm0quohu.us-east-1.rds.amazonaws.com"
+RDS_PORT = 3306
+
+def verify_password(password, stored_hash):
+    salt_hex, hash_hex = stored_hash.split(":")
+    salt = bytes.fromhex(salt_hex)
+    original_hash = bytes.fromhex(hash_hex)
+
+    new_hash = hashlib.scrypt(
+        password.encode(),
+        salt=salt,
+        n=16384,
+        r=8,
+        p=1
+    )
+
+    return hmac.compare_digest(new_hash, original_hash)
+
+def lambda_handler(event, context):
+
+    secrets_client = boto3.client(
+        "secretsmanager",
+        region_name=REGION
+    )
+
+    response = secrets_client.get_secret_value(
+        SecretId=SECRET_NAME
+    )
+
+    secret = json.loads(response["SecretString"])
+
+    body = json.loads(event["body"])
+
+    email = body["email"]
+    password = body["password"]
+
+    connection = pymysql.connect(
+        host=RDS_HOST,
+        user=secret["username"],
+        password=secret["password"],
+        port=RDS_PORT,
+        database="ecommerce_db",
+        connect_timeout=5
+    )
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT id, name, email, password_hash
+            FROM users
+            WHERE email = %s
+            """,
+            (email,)
+        )
+
+        user = cursor.fetchone()
+
+    connection.close()
+
+    if user is None:
+        return {
+            "statusCode": 401,
+            "body": json.dumps({
+                "message": "Invalid email or password"
+            })
+        }
+
+    user_id, name, user_email, stored_hash = user
+
+    password_valid = verify_password(
+        password,
+        stored_hash
+    )
+
+    if not password_valid:
+        return {
+            "statusCode": 401,
+            "body": json.dumps({
+                "message": "Invalid email or password"
+            })
+        }
+
+    return {
+        "statusCode": 200,
+        "body": json.dumps({
+            "message": "Login successful",
+            "user": {
+                "id": user_id,
+                "name": name,
+                "email": user_email
+            }
+        })
+    }
+```
+
+---
+
+### 6.3 Ecommerce-Get-Products
+
+The Get Products Lambda retrieves product data from RDS and returns it to the frontend.
+
+```python
+import json
+import boto3
+import pymysql
+
+SECRET_NAME = "rds!db-e3663d17-6fe4-4488-9454-a42c3f79f307"
+REGION = "us-east-1"
+
+RDS_HOST = "ecommerce-db.cg7gmm0quohu.us-east-1.rds.amazonaws.com"
+RDS_PORT = 3306
+
+def lambda_handler(event, context):
+
+    secrets_client = boto3.client(
+        "secretsmanager",
+        region_name=REGION
+    )
+
+    response = secrets_client.get_secret_value(
+        SecretId=SECRET_NAME
+    )
+
+    secret = json.loads(response["SecretString"])
+
+    connection = pymysql.connect(
+        host=RDS_HOST,
+        user=secret["username"],
+        password=secret["password"],
+        port=RDS_PORT,
+        database="ecommerce_db",
+        connect_timeout=5
+    )
+
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT id, name, description, price, stock
+            FROM products
+            ORDER BY id
+        """)
+
+        products = cursor.fetchall()
+
+    connection.close()
+
+    result = []
+
+    for product in products:
+        result.append({
+            "id": product[0],
+            "name": product[1],
+            "description": product[2],
+            "price": float(product[3]),
+            "stock": product[4]
+        })
+
+    return {
+        "statusCode": 200,
+        "headers": {
+            "Content-Type": "application/json"
+        },
+        "body": json.dumps({
+            "products": result
+        })
+    }
+```
+
+---
+
+## 7. Lambda Test Result
+
+The `Ecommerce-Get-Products` Lambda was tested successfully.
+
+The Lambda returned an HTTP `200` response and retrieved the product records stored in Amazon RDS.
+
+json
+{
+  "statusCode": 200,
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"products\": [{\"id\": 1, \"name\": \"Premium T-Shirt\", \"description\": \"High-quality comfortable t-shirt\", \"price\": 25.0, \"stock\": 100}, {\"id\": 2, \"name\": \"Classic Hoodie\", \"description\": \"Classic comfortable hoodie\", \"price\": 45.0, \"stock\": 50}, {\"id\": 3, \"name\": \"Sport Cap\", \"description\": \"Lightweight sports cap\", \"price\": 18.0, \"stock\": 75}, {\"id\": 4, \"name\": \"Sports Bag\", \"description\": \"Durable sports bag for training\", \"price\": 35.0, \"stock\": 40}]}"
+}
+```
+
+This confirms that Lambda successfully connected to the MySQL database, queried the `products` table, and returned the stored records.
+
+---
+
+
+
+## 9. Security and Networking
+
+The application uses several AWS security and networking controls:
+
+* Amazon RDS is not publicly accessible.
+* Lambda accesses RDS through the VPC.
 * Security Groups restrict MySQL access to the required resources.
 * Database credentials are stored in AWS Secrets Manager.
 * Credentials are not exposed in frontend code.
-* Passwords are hashed before being stored in the database.
-* Secrets Manager is accessed privately through a VPC Endpoint.
+* Passwords are hashed before being stored.
+* Lambda accesses Secrets Manager through a VPC Endpoint.
+* RDS accepts MySQL traffic on port `3306` from the Lambda Security Group.
 
-These controls demonstrate how cloud-native applications can maintain a secure architecture while still providing the functionality needed by a web frontend.
+These configurations provide controlled communication between the application components while keeping the database private.
 
-## 8. Frontend
+---
 
-The frontend is implemented with standard web technologies and provides the user-facing interface for the application:
+## 10. Frontend
+
+The frontend is built using:
 
 * HTML5
 * CSS3
 * JavaScript
 
-The interface includes:
+The application provides:
 
-* Registration
-* Login
+* Home page
+* User registration
+* User login
 * Logout
 * Welcome message
 * Dynamic product loading
-* Shopping cart with quantity controls
-* Dark and light mode toggle
+* Shopping cart
+* Quantity controls
+* Dark and light mode
 * Responsive design
 
-The frontend is intentionally kept lightweight and focused on user interaction while the backend responsibilities are handled by AWS services.
+The product data displayed on the Store page is retrieved dynamically from the AWS backend.
 
-## 9. Project Structure
+---
+
+## 11. Project Structure
 
 ```text
 Lambda-Project/
@@ -157,12 +631,14 @@ Lambda-Project/
 │   └── script.js
 ├── assets/
 │   └── logo.svg
+├── screenshots/
+│   └── architecture-diagram.png
 └── .gitignore
 ```
 
-This repository contains the frontend application structure used to connect to the AWS backend services described in this project. No additional backend files are included in this repository.
+---
 
-## 10. Technologies
+## 12. Technologies
 
 * HTML5
 * CSS3
@@ -174,34 +650,46 @@ This repository contains the frontend application structure used to connect to t
 * AWS Secrets Manager
 * Amazon VPC
 * Security Groups
+* VPC Endpoint
 * PyMySQL
 
-## 11. What I Learned
+---
 
-This project demonstrates practical experience with the following AWS and application integration concepts:
+## 13. What I Learned
 
-* Building a serverless backend with AWS Lambda
-* Connecting API Gateway to Lambda-based application logic
-* Integrating Lambda with Amazon RDS MySQL
-* Using AWS Secrets Manager for secure credential management
-* Working with VPC networking and private communication patterns
-* Configuring Security Groups for resource isolation
-* Building APIs that support frontend-driven applications
-* Integrating multiple AWS services into a cohesive application architecture
-* Understanding how serverless components communicate in a real application environment
+This project provided practical experience with:
 
-## 12. Future Improvements
+* Designing a serverless AWS architecture
+* Building backend APIs using API Gateway and Lambda
+* Connecting Lambda to Amazon RDS MySQL
+* Using Secrets Manager for secure database credentials
+* Configuring Lambda and RDS inside a VPC
+* Using Security Groups to control database access
+* Using a VPC Endpoint for private Secrets Manager access
+* Building frontend applications that consume AWS APIs
+* Working with relational database tables and application data
+* Integrating multiple AWS services into a complete application workflow
 
-The following items are planned as future improvements and are not implemented in the current version of this project:
+---
+
+## 14. Future Improvements
+
+The following capabilities could be added in a future version:
 
 * Backend order management
 * Checkout API
 * Amazon Cognito authentication
 * Payment integration
-* S3 and CloudFront deployment
+* Amazon S3 and CloudFront deployment
 * Infrastructure as Code
-* Improved monitoring and logging
+* Advanced monitoring and logging
 
-## 13. Conclusion
+---
 
-This project demonstrates practical experience in designing and integrating a serverless AWS application with AWS Lambda as the primary backend compute service. It combines frontend interaction, API exposure, secure secret management, database connectivity, and private networking into a working architecture that reflects common patterns used in cloud-native application development.
+## 15. Conclusion
+
+This project demonstrates a practical serverless e-commerce architecture using AWS Lambda as the primary backend compute service.
+
+The application integrates Amazon API Gateway, AWS Lambda, Amazon RDS for MySQL, AWS Secrets Manager, Amazon VPC, Security Groups, and a VPC Endpoint into a working cloud-based application.
+
+The completed workflow demonstrates how frontend requests can be processed by serverless backend functions, securely access a private relational database, and return real application data to the user.
