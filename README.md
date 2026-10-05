@@ -12,7 +12,9 @@ The project demonstrates how multiple AWS services can work together to provide 
 
 ## 2. Architecture
 
-![AWS Serverless E-Commerce Architecture](screenshots/architecture-diagram.png)
+## Architecture
+
+![AWS Serverless E-Commerce Architecture](architecture-diagram.png)
 
 The application follows a serverless backend architecture:
 
